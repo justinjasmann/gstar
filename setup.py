@@ -1,21 +1,24 @@
-import ez_setup
-ez_setup.use_setuptools()
+import os
 
 from setuptools import setup
+
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
 setup(
 
         name = "gstar-Google-Play-Scraper",
-        long_description = open("README").read(),
+        description = "Google Play Scraper",
+        long_description = read("README"),
         version = "0.1dev",
-        packages = ["gstar"],
+        py_modules = ["gstar"],
 
         author = "Justin Jasmann",
         author_email = "justin.jasmann@gmail.com",
 
         keywords = "",
-        license = "",
+        license = "BSD",
 
-        install_requires = "bs4>=4",
-        zip_safe = True
+        install_requires = "beautifulsoup4 >= 4",
 
     )
