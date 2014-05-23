@@ -1,0 +1,4 @@
+.DS_Store
+dist/*
+*.pyc
+gstar_Google_Play_Scraper.egg-info/*
