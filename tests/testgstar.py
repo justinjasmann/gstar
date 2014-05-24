@@ -57,7 +57,7 @@ class gstarTester(unittest.TestCase):
                 self.gstar.star_rating(self.package))
             self.assertEqual(None, self.gstar.star_rating(self.package))
             self.assertEqual(None, self.gstar.star_rating(self.package))
-#
+
     @patch('gstar.urllib2.urlopen')
     def test_star_span_css_changed(self, mock_urllib_urlopen):
         with patch('gstar.BeautifulSoup') as mock_beautiful_soup:
@@ -81,7 +81,7 @@ class gstarTester(unittest.TestCase):
                 self.gstar.star_rating(self.package))
             self.assertEqual(None, self.gstar.star_rating(self.package))
             self.assertEqual(None, self.gstar.star_rating(self.package))
-#
+
     def test_star_rating_expected(self):
         star_ratings = gstar.StarRatings()
         star_ratings.five = Mock(return_value = 5)
