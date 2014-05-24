@@ -2,46 +2,76 @@ import urllib2
 
 from bs4 import BeautifulSoup
 
-class GooglePlayUrls(object):
-    DETAILS_BASE_URL = "https://play.google.com/store/apps/details?"
-    DETAILS_ID_PARAM = "id="
-
 class GStar(object):
-    @staticmethod
-    def star_rating(package):
-        url = GooglePlayUrls.DETAILS_BASE_URL + GooglePlayUrls.DETAILS_ID_PARAM + str(package)
-        response = urllib2.urlopen(url)
-        html = response.read()
-        soup = BeautifulSoup(html)
+    
+    def __init__(self):
+        self.URL_DETAILS_ROUTE = "/details"
+        self.URL_PARAM_SEPARATOR = "?"
+        self.URL_PARAM_ID = "id="
+        self.GOOGLE_PLAY_STORE_BASE_URL = "https://play.google.com/store"
+        self.GOOGLE_PLAY_STORE_APPS_URL = self.GOOGLE_PLAY_STORE_BASE_URL + "/apps"
+    
+    def star_rating(self, package):
+        url = self.GOOGLE_PLAY_STORE_APPS_URL + \
+                self.URL_DETAILS_ROUTE + \
+                self.URL_PARAM_SEPARATOR + \
+                self.URL_PARAM_ID + \
+                str(package)
+        try:
+            response = urllib2.urlopen(url)
+            html = response.read()
+            soup = BeautifulSoup(html)
+            
+            ratings_div_attrs = { HtmlAttributes.CSS_CLASS : CssClassHelper.RATING_HISTOGRAM }
+            ratings_div = soup.find(HtmlTags.DIV, attrs = ratings_div_attrs)
+            
+            if ratings_div is None:
+                raise CssHasChangedException(CssClassHelper.RATING_HISTOGRAM)
+    
+            five_star_div = ratings_div.find(HtmlTags.DIV, attrs = self.__ratings_div_attrs("five"))
+            four_star_div = ratings_div.find(HtmlTags.DIV, attrs = self.__ratings_div_attrs("four"))
+            three_star_div = ratings_div.find(HtmlTags.DIV, attrs = self.__ratings_div_attrs("three"))
+            two_star_div = ratings_div.find(HtmlTags.DIV, attrs = self.__ratings_div_attrs("two"))
+            one_star_div = ratings_div.find(HtmlTags.DIV, attrs = self.__ratings_div_attrs("one"))
+            
+            if five_star_div is None or \
+                four_star_div is None or \
+                three_star_div is None or \
+                two_star_div is None or \
+                one_star_div is None:
+                raise CssHasChangedException(CssClassHelper.rating_class("<number>"))
+    
+            star_number_span_attrs = { HtmlAttributes.CSS_CLASS : CssClassHelper.BAR_NUMBER}
+            five_star_span = five_star_div.find(HtmlTags.SPAN, attrs = star_number_span_attrs)
+            four_star_span = four_star_div.find(HtmlTags.SPAN, attrs = star_number_span_attrs)
+            three_star_span = three_star_div.find(HtmlTags.SPAN, attrs = star_number_span_attrs)
+            two_star_span = two_star_div.find(HtmlTags.SPAN, attrs = star_number_span_attrs)
+            one_star_span = one_star_div.find(HtmlTags.SPAN, attrs = star_number_span_attrs)
+            
+            # what happens if we can't find these spans
+            if five_star_span is None or \
+                four_star_span is None or \
+                three_star_span is None or \
+                two_star_span is None or \
+                one_star_span is None:
+                raise CssHasChangedException(CssClassHelper.BAR_NUMBER)
+                
+            star_ratings = StarRatings()
+            star_ratings.package = str(package)
+            star_ratings.five = str(five_star_span.string)
+            star_ratings.four = str(four_star_span.string)
+            star_ratings.three = str(three_star_span.string)
+            star_ratings.two = str(two_star_span.string)
+            star_ratings.one = str(one_star_span.string)
+            
+            return star_ratings
+            
+        except urllib2.URLError as e:
+            print "URL was malformed: '" + url + "'"
+        except CssHasChangedException as e:
+            print "CSS class '" + e.css_class + "' has changed at URL: '" + url + "'"
 
-        ratings_div_attrs = { HtmlAttributes.CSS_CLASS : CssClassHelper.RATING_HISTOGRAM }
-        ratings_div = soup.find(HtmlTags.DIV, attrs = ratings_div_attrs)
-
-        five_star_div = ratings_div.find(HtmlTags.DIV, attrs = GStar.__ratings_div_attrs("five"))
-        four_star_div = ratings_div.find(HtmlTags.DIV, attrs = GStar.__ratings_div_attrs("four"))
-        three_star_div = ratings_div.find(HtmlTags.DIV, attrs = GStar.__ratings_div_attrs("three"))
-        two_star_div = ratings_div.find(HtmlTags.DIV, attrs = GStar.__ratings_div_attrs("two"))
-        one_star_div = ratings_div.find(HtmlTags.DIV, attrs = GStar.__ratings_div_attrs("one"))
-
-        star_number_span_attrs = { HtmlAttributes.CSS_CLASS : CssClassHelper.BAR_NUMBER}
-        five_star_span = five_star_div.find(HtmlTags.SPAN, attrs = star_number_span_attrs)
-        four_star_span = four_star_div.find(HtmlTags.SPAN, attrs = star_number_span_attrs)
-        three_star_span = three_star_div.find(HtmlTags.SPAN, attrs = star_number_span_attrs)
-        two_star_span = two_star_div.find(HtmlTags.SPAN, attrs = star_number_span_attrs)
-        one_star_span = one_star_div.find(HtmlTags.SPAN, attrs = star_number_span_attrs)
-
-        star_ratings = StarRatings()
-        star_ratings.package = str(package)
-        star_ratings.five = str(five_star_span.string)
-        star_ratings.four = str(four_star_span.string)
-        star_ratings.three = str(three_star_span.string)
-        star_ratings.two = str(two_star_span.string)
-        star_ratings.one = str(one_star_span.string)
-
-        return star_ratings
-
-    @staticmethod
-    def __ratings_div_attrs(star_string):
+    def __ratings_div_attrs(self, star_string):
         return { HtmlAttributes.CSS_CLASS : CssClassHelper.rating_class(star_string) }
 
 class StarRatings(object):
@@ -79,8 +109,8 @@ class HtmlAttributes(object):
     CSS_CLASS = "class"
 
 class HtmlTags(object):
-        DIV = "div"
-        SPAN = "span"
+    DIV = "div"
+    SPAN = "span"
 
 class CssClassHelper(object):
     BAR_NUMBER = "bar-number"
@@ -91,23 +121,12 @@ class CssClassHelper(object):
     @staticmethod
     def rating_class(rating):
         return CssClassHelper.RATING_BAR + " " + str(rating)
-
-def main():
-    bbm_rating = GStar.star_rating("com.bbm");
-    pretty_print(bbm_rating)
     
-def pretty_print(star_ratings):
-    print "package: " + str(star_ratings.package)
-    print "five" 
-    print str(star_ratings.five)
-    print "four"
-    print str(star_ratings.four)
-    print "three" 
-    print str(star_ratings.three)
-    print "two"
-    print str(star_ratings.two)
-    print "one"
-    print str(star_ratings.one)  
-
+class CssHasChangedException(Exception):
+    def __init__(self, css_class):
+        self.css_class = css_class
+    def __str__(self):
+        return repr(self.css_class)
+    
 if __name__ == '__main__':
-    main()
+    pass
